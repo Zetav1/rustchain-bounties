@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
 """
 RustChain Telegram Bot (Enhanced)
 Provides wallet balance, miner status, and persistence for users.
@@ -53,7 +54,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         [InlineKeyboardButton("🩺 Node Health", callback_data="health_info")],
     ]
     
-    await update.message.reply_text(
+    await update.effective_message.reply_text(
         welcome_text,
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup(keyboard),
@@ -61,25 +62,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not context.args:
-        await update.message.reply_text("Usage: `/register <wallet_id>`", parse_mode="Markdown")
+        await update.effective_message.reply_text("Usage: `/register <wallet_id>`", parse_mode="Markdown")
         return
     
     wallet_id = context.args[0].strip()
     db.set_default_wallet(update.effective_user.id, wallet_id)
-    await update.message.reply_text(
+    await update.effective_message.reply_text(
         f"✅ Wallet registered successfully:\n`{_escape_md(wallet_id)}`",
         parse_mode="Markdown"
     )
 
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
-    wallet_id = context.args[0] if context.args else db.get_default_wallet(user_id)
+    wallet_id = context.args[0] if (hasattr(context, 'args') and context.args) else db.get_default_wallet(user_id)
     
     if not wallet_id:
-        await update.message.reply_text("Please provide a wallet ID or `/register` one first.")
+        await update.effective_message.reply_text("Please provide a wallet ID or `/register` one first.")
         return
 
-    msg = await update.message.reply_text(f"🔍 Fetching balance for `{_escape_md(wallet_id)}`...")
+    msg = await update.effective_message.reply_text(f"🔍 Fetching balance for `{_escape_md(wallet_id)}`...")
     data = await api.get_balance(wallet_id)
     
     if "error" in data:
@@ -92,13 +93,13 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def miner(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
-    miner_id = context.args[0] if context.args else db.get_default_wallet(user_id)
+    miner_id = context.args[0] if (hasattr(context, 'args') and context.args) else db.get_default_wallet(user_id)
     
     if not miner_id:
-        await update.message.reply_text("Please provide a miner ID or `/register` one first.")
+        await update.effective_message.reply_text("Please provide a miner ID or `/register` one first.")
         return
 
-    msg = await update.message.reply_text(f"⛏️ Checking miner `{_escape_md(miner_id)}`...")
+    msg = await update.effective_message.reply_text(f"⛏️ Checking miner `{_escape_md(miner_id)}`...")
     
     miners = await api.get_miners()
     status = "🔴 Not Attesting"
