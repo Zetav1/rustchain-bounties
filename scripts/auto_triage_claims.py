@@ -554,7 +554,11 @@ def main() -> int:
     ledger_repo = os.environ.get("LEDGER_REPO", "").strip()
     ledger_issue = os.environ.get("LEDGER_ISSUE", "").strip()
     if ledger_repo and ledger_issue:
-        issue_path = f"/repos/Scottcjn/{ledger_repo}/issues/{int(ledger_issue)}"
+        gh_repo = os.environ.get("GITHUB_REPOSITORY", "")
+        owner = "Scottcjn"
+        if "/" in gh_repo:
+            owner = gh_repo.split("/")[0]
+        issue_path = f"/repos/{owner}/{ledger_repo}/issues/{int(ledger_issue)}"
         ledger = _gh_request("GET", issue_path, token)
         body = ledger.get("body") or ""
         new_block = f"{MARKER_START}\n{report}\n{MARKER_END}"
@@ -565,7 +569,7 @@ def main() -> int:
         else:
             updated = f"{body}\n\n{new_block}\n"
         _gh_request("PATCH", issue_path, token, data={"body": updated})
-        print(f"\nUpdated ledger issue: Scottcjn/{ledger_repo}#{ledger_issue}")
+        print(f"\nUpdated ledger issue: {owner}/{ledger_repo}#{ledger_issue}")
 
     return 0
 
