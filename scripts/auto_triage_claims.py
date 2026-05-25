@@ -559,17 +559,20 @@ def main() -> int:
         if "/" in gh_repo:
             owner = gh_repo.split("/")[0]
         issue_path = f"/repos/{owner}/{ledger_repo}/issues/{int(ledger_issue)}"
-        ledger = _gh_request("GET", issue_path, token)
-        body = ledger.get("body") or ""
-        new_block = f"{MARKER_START}\n{report}\n{MARKER_END}"
-        if MARKER_START in body and MARKER_END in body:
-            start = body.index(MARKER_START)
-            end = body.index(MARKER_END) + len(MARKER_END)
-            updated = f"{body[:start]}{new_block}{body[end:]}"
-        else:
-            updated = f"{body}\n\n{new_block}\n"
-        _gh_request("PATCH", issue_path, token, data={"body": updated})
-        print(f"\nUpdated ledger issue: {owner}/{ledger_repo}#{ledger_issue}")
+        try:
+            ledger = _gh_request("GET", issue_path, token)
+            body = ledger.get("body") or ""
+            new_block = f"{MARKER_START}\n{report}\n{MARKER_END}"
+            if MARKER_START in body and MARKER_END in body:
+                start = body.index(MARKER_START)
+                end = body.index(MARKER_END) + len(MARKER_END)
+                updated = f"{body[:start]}{new_block}{body[end:]}"
+            else:
+                updated = f"{body}\n\n{new_block}\n"
+            _gh_request("PATCH", issue_path, token, data={"body": updated})
+            print(f"\nUpdated ledger issue: {owner}/{ledger_repo}#{ledger_issue}")
+        except urllib.error.HTTPError as exc:
+            print(f"\nWARN: Could not update ledger issue at {owner}/{ledger_repo}#{ledger_issue} ({exc}). Skipping gracefully.")
 
     return 0
 
